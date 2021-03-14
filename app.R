@@ -47,7 +47,7 @@ dataPanel_1 <- tabPanel("Players Rating",
                                         selected = 1)
                           ), mainPanel(
                             h3("Overall Rating"),
-                            plotOutput(outputId = "Overall", click = "plot_click")
+                            plotly::plotlyOutput(outputId = "Overall")
                           )
                           ))
                         
@@ -61,7 +61,7 @@ dataPanel_2 <- tabPanel("Players Stats",
                                         selected = 1)
                           ), mainPanel(
                             h3("Player Stats"),
-                            plotOutput(outputId = "Stats", click = "plot_click")
+                            plotly::plotlyOutput(outputId = "Stats")
                           )
                           ))
                         
@@ -167,13 +167,13 @@ ui <- navbarPage("FIFA Football Players (Shiny Take-Away Assignment App)",
 server <- function(input, output) {
   
   # 1
-  output$Overall <- renderPlot({
+  output$Overall <- plotly::renderPlotly({
     ggplot(df, aes(x = .data[[input$select_overall]], y = Overall, color = Position)) + geom_point() + 
       labs(colour = "Position") + scale_x_continuous(labels = scales::comma)
   })
   
   # 2
-  output$Stats <- renderPlot({
+  output$Stats <- plotly::renderPlotly({
     ggplot(df, aes(x = Position, y = .data[[input$select_stats]], fill = Position)) +
       geom_boxplot(alpha = 0.6) + labs(x = "Position", fill = "Position")
   })  
