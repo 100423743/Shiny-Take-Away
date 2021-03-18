@@ -34,6 +34,7 @@ df %<>% rename(Name=name, Age=age, Height=height_cm, Weight=weight_kgs, National
   
 list_choices_overall <- colnames(df[,c(7,22,14,11,12,13,16,20)])
 list_choices_stats <- colnames(df[,c(3,4,6,8,11:22)])
+list_choices_top <- colnames(df[,c(6,7,8,22,14,18,12)])
 model_price <- lm(Price ~ Age+Wage+Speed+Control++Dribbling+ShortPassing+LongPassing,data=df)
 
 ## PANELS
@@ -107,7 +108,6 @@ dataPanel_3 <- tabPanel("Price Calculator",
                                                  sliderInput("n_pass", label="", min = 0, max = 99, value = 50, step = 1)
                                           )
                                         ),
-                                        
                                         fluidRow(
                                           h3(style = "margin-left: 0px; margin-bottom: 0px;", "Long Pass"),
                                           column(12,
@@ -126,13 +126,24 @@ dataPanel_3 <- tabPanel("Price Calculator",
                         
 
 dataPanel_4 <- tabPanel("Top Players",
+                          dashboardHeader(),
+                          dashboardSidebar(),
+                          dashboardBody(
+                            fluidRow(
+                              box(dataTableOutput("Top")),
+                              box(textInput(inputId = "n_rank",
+                                            label = "Choose a number",
+                                            value = 15)),
+                              box(selectInput("variable", "Select variable to rank", 
+                                              choices = list_choices_top))            
+                            )
+                          ),
                         mainPanel(
-                          h3("Top Players Table"),
-                          tableOutput("Top")
+                          h3("Top Players Table")
                         )
-                        
 )
   
+
 # UI
 ui <- navbarPage("FIFA Football Players (Shiny Take-Away Assignment App)",
                  dataPanel_1,
@@ -157,7 +168,7 @@ server <- function(input, output) {
       geom_boxplot(alpha = 0.6) + labs(x = "Position", fill = "Position")
   })  
   
-  # 3 Age+Wage+Speed+Control+Dribbling+ShortPassing+LongPassing
+  # 3 
   output$Calculator <- renderText({
     price <- summary(model_price)$coef[1,1] + 
       summary(model_price)$coef[2,1]*input$n_age + summary(model_price)$coef[3,1]*input$n_wage + 
@@ -190,7 +201,14 @@ server <- function(input, output) {
   
   output$Summary <- renderPrint(summary(model_price))
   
-
+  # 4
+  
+  filt_df <- reactive(df[1:input$n_rank,][setorder(input$variable)])
+  output$Top <- renderDataTable({
+    datatable(filt_df()) 
+  }) 
+  
+  
 }  
 # Run the application 
 shinyApp(ui = ui, server = server)
