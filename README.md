@@ -25,8 +25,11 @@ It will be composed by 4 interactive and different pages:
     observe with further detail the linear model used to estimate the player's price.
     
   4. TOP PLAYERS
-    In this last page, the user can observe a Top 15 Players Ranking according a selected stat
-    or feature, in order to visualize and have an overall idea of which players and from which clubs
-    are the best ones by that characteristic.
+    In this last page, the user can observe a Ranking of Top (10, 25, 50, 100) Players according to the main feature 
+    we want to rank them. We can rank them by clicking over the column name (once to see the Bottom ones and double 
+    click for the Top ones according that variable). Additionally, there is a search tab in which you can 
+    search about a specific player, team or even nationalities, in order to visualize and have 
+    an overall idea of which players and from which clubs are the best ones according some characteristics or 
+    stats.
     
     
