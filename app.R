@@ -33,38 +33,41 @@ df %<>% rename(Name=name, Age=age, Height=height_cm, Weight=weight_kgs, National
                Curve=curve, Freekick=freekick_accuracy, LongPassing=long_passing,
                Control=ball_control, Acceleration=acceleration, Speed=sprint_speed)
   
-list_choices_overall <- colnames(df[,c(7,22,14,11,12,13,16,20)])
-list_choices_stats <- colnames(df[,c(3,4,6,8,11:22)])
-list_choices_top <- colnames(df[,c(6,7,22,14,18,12)])
+list_choices_overall <- colnames(df[,c(12,11,13:22)])
+list_choices_positions <- c("GOALKEEPER", "DEFENDER", "MIDFIELDER", "STRIKER")
 model_price <- lm(Price ~ Age+Wage+Speed+Control++Dribbling+ShortPassing+LongPassing,data=df)
 
 ## PANELS
 dataPanel_1 <- tabPanel("Players Rating",
                         fluidPage(
-                          sidebarLayout(sidebarPanel(
+                          sidebarLayout(position = "right",
+                            sidebarPanel(
                             selectInput("select_overall", label = h3("Players Overall Rating by:"), 
                                         choices = list_choices_overall,
                                         selected = 1)
                           ), mainPanel(
                             h3("Overall Rating"),
-                            plotOutput(outputId = "Overall_plot", click="point_click"),
-                            h4("Click on a point to know the player:"),
-                            tableOutput("table_point")
+                            plotly::plotlyOutput(outputId = "Overall"),
+                            h3("Stats per position"),
+                            plotly::plotlyOutput(outputId = "Stats")
                           )
                           ))
                         
 ) # tabPanel
 
-dataPanel_2 <- tabPanel("Players Stats",
+dataPanel_2 <- tabPanel("Players Wage",
                         fluidPage(
                           sidebarLayout(sidebarPanel(
-                            selectInput("select_stats", label = h3("Players Stats by Position:"), 
-                                        choices = list_choices_stats,
-                                        selected = 1)
-                          ), mainPanel(
-                            h3("Player Stats"),
-                            plotly::plotlyOutput(outputId = "Stats")
-                          )
+                                          selectInput("select_position", 
+                                                      label = h3("Players Wage for a:"), 
+                                                      choices = list_choices_positions,
+                                                      selected = 1)
+                                        ), mainPanel(
+                                          h3("Wage per position"),
+                                          plotOutput(outputId = "Wage", click = "plot_click"),
+                                          h4("Click on a point to know about the player corresponding that wage:"),
+                                          tableOutput("Info")
+                                        )
                           ))
                         
 ) # tabPanel
@@ -144,27 +147,36 @@ ui <- navbarPage("FIFA Football Players (Shiny Take-Away Assignment App)",
                  dataPanel_2,
                  dataPanel_3,
                  dataPanel_4)
-    
-    
 
 # SERVER
 server <- function(input, output) {
   
   # 1
-  output$Overall_plot <- renderPlot({
-    ggplot(df, aes(x = .data[[input$select_overall]], y = Overall, color = Position)) + geom_point() + 
+  output$Overall <- plotly::renderPlotly({
+    ggplot(df, aes_string(x=input$select_overall, y=df$Overall, color=df$Position)) + 
+    geom_point(size=0.8) +  xlab(input$select_overall) + ylab("Overall") +
       labs(colour = "Position") + scale_x_continuous(labels = scales::comma)
   })
   
-  output$table_point <- renderTable({
-    nearPoints(df, coordinfo = input$select_overall, yvar = "Overall",
-               input$point_click, maxpoints = 1)
-  })
-  # 2
   output$Stats <- plotly::renderPlotly({
-    ggplot(df, aes(x = Position, y = .data[[input$select_stats]], fill = Position)) +
+    ggplot(df, aes(x = Position, y = .data[[input$select_overall]], fill = Position)) +
       geom_boxplot(alpha = 0.6) + labs(x = "Position", fill = "Position")
-  })  
+  }) 
+  
+  
+  # 2
+   
+  output$Wage <- renderPlot({
+      ggplot(df %>% filter(Position == input$select_position), 
+             aes(df, x=Wage, y=Overall, colour = Position)) + geom_point(colour="mediumseagreen") +
+      scale_x_continuous(labels = scales::comma) + labs(x = "Wage (€)", fill = "Position")
+  });
+  
+  output$Info <- renderTable({
+      nearPoints(df %>% filter(Position == input$select_position) %>% 
+                   select(Name, Age, Overall, Wage, Team, Nationality), 
+                 input$plot_click, maxpoints=1)
+  })
   
   # 3 
   output$Calculator <- renderText({
@@ -204,6 +216,32 @@ server <- function(input, output) {
   
   output$Top <- renderDataTable({df[,c(1,2,10,9,5,6,7,22,14,18,12)]})
   
+  
+  # PDF OUTPUT
+  
+  output$report <- downloadHandler(
+
+    filename = "report.pdf",
+    content = function(file) {
+      
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(
+        selYear = isolate(input$selYear),
+        selCountry = isolate(input$selCountry)
+      )
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
 }  
 # Run the application 
 shinyApp(ui = ui, server = server)
