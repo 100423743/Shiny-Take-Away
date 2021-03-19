@@ -120,6 +120,7 @@ dataPanel_3 <- tabPanel("Price Calculator",
                                                  sliderInput("n_lpass", label="", min = 0, max = 99, value = 50, step = 1)
                                           )
                                         ),
+                                        downloadButton("report", "Download final signing price report")
                                       ),
                                       mainPanel(
                                         tabsetPanel(type = "tabs",
@@ -144,8 +145,8 @@ dataPanel_4 <- tabPanel("Top Players",
 ui <- navbarPage("FIFA Football Players (Shiny Take-Away Assignment App)",
                  theme = shinytheme("flatly"),  
                  dataPanel_1,
-                 dataPanel_2,
                  dataPanel_3,
+                 dataPanel_2,
                  dataPanel_4)
 
 # SERVER
@@ -153,7 +154,7 @@ server <- function(input, output) {
   
   # 1
   output$Overall <- plotly::renderPlotly({
-    ggplot(df, aes_string(x=input$select_overall, y=df$Overall, color=df$Position)) + 
+    ggplot(df, aes(x=.data[[input$select_overall]], y=Overall, color=Position)) + 
     geom_point(size=0.8) +  xlab(input$select_overall) + ylab("Overall") +
       labs(colour = "Position") + scale_x_continuous(labels = scales::comma)
   })
@@ -205,9 +206,12 @@ server <- function(input, output) {
           "<br>",
           "<b>", input$n_pass, "</b>", "of short pass rating,",
           "<br>",
-          "and", "<b>", input$n_lpass, "</b>", "of finishing skills",
+          "and", "<b>", input$n_lpass, "</b>", "of long pass rating",
           "<br>",
-          "would be around:", "<b>", round(price,2), "</b>", "€")
+          "would be around:", "<b>", round(price,2), "</b>", "€",
+          "<br>","<br>",
+          "[A final written report about the price estimation of the desired player can be downloaded at the right bottom of this page]")
+    
   })
   
   output$Summary <- renderPrint(summary(model_price))
@@ -221,7 +225,7 @@ server <- function(input, output) {
   
   output$report <- downloadHandler(
 
-    filename = "report.pdf",
+    filename = "report.html",
     content = function(file) {
       
       tempReport <- file.path(tempdir(), "report.Rmd")
@@ -229,8 +233,13 @@ server <- function(input, output) {
       
       # Set up parameters to pass to Rmd document
       params <- list(
-        selYear = isolate(input$selYear),
-        selCountry = isolate(input$selCountry)
+        selAge = isolate(input$n_age),
+        selWage = isolate(input$n_wage),
+        selSpeed = isolate(input$n_speed),
+        selControl = isolate(input$n_control),
+        selDribbling = isolate(input$n_dribbling),
+        selPass = isolate(input$n_pass),
+        selLPass = isolate(input$n_lpass)
       )
       
       # Knit the document, passing in the `params` list, and eval it in a

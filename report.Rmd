@@ -1,0 +1,52 @@
+---
+title: "report"
+author: "Ignacio Medina de Andrés"
+date: "19/3/2021"
+output: html_document
+params: 
+  selAge: 25
+  selWage: 50
+  selSpeed: 50
+  selControl: 50
+  selDribbling: 50
+  selPass: 50
+  selLPass: 50
+---
+
+```{r include=FALSE}
+model_price <- lm(Price ~ Age+Wage+Speed+Control++Dribbling+ShortPassing+LongPassing,data=df)
+
+price <- summary(model_price)$coef[1,1] + 
+      summary(model_price)$coef[2,1]*params$selAge + summary(model_price)$coef[3,1]*params$selWage + 
+      summary(model_price)$coef[4,1]*params$selSpeed + summary(model_price)$coef[5,1]*params$selControl +
+      summary(model_price)$coef[6,1]*params$selDribbling + summary(model_price)$coef[7,1]*params$selPass +
+      summary(model_price)$coef[8,1]*params$selLPass
+```
+
+This final player signing price estimation has been computed by tuning its physical and technical stats, obtained from the **FIFA** (Fédération Internationale de Football Association) stats assigned for the 2019/20 season. 
+
+After tuning these player stats, the **estimated signing price** for a player with the following characteristics: 
+
+- `r params$selAge` years old, 
+- earning `r params$selWage` € per year, 
+- `r params$selSpeed` of speed rating, 
+- `r params$selControl` of ball control rating, 
+- `r params$selDribbling` of dribbling rating, 
+- `r params$selPass` of short pass rating, 
+- and `r params$selLPass` of finishing skills 
+
+would be:
+
+```{r echo=FALSE}
+cat(round(price,2),"€")
+```
+
+
+### Linear model behind the signing price estimation 
+
+```{r echo=FALSE}
+summary(model_price)
+```
+
+
+
